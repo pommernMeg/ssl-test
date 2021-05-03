@@ -8,11 +8,15 @@ __copyright__   = "Copyright 2021, Heinlein-Support"
 __version__ = "0.0.1"
 
 import sslTester
+import helptools
 
 def main():
     import argparse
     import sys
     
+    if helptools.git_pull_change("/home/marcel/Dokumente/Arbeit/tool-box/ssl-test"):
+        print("Es gibt eine Updates im git repo")
+        
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--mx',
