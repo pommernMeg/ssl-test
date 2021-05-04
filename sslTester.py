@@ -1,53 +1,85 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""sslTester.py: """
+
+__author__ = "Marcel Eggert"
+__copyright__ = "Copyright 2021"
+__version__ = "0.0.1"
+
 class sslTester():
     """
     Create ssl Tester module for testing ssl connections.
     1. config aus yaml laden
     2. Farben fürs Terminal laden
-    
+
     """
-   
+
     def __init__(self):
         self.openssl_local_path = "/usr/local/bin/openssl"
         self.openssl_local_version = "1.1.1k"
         self.build_version = "0.0.1"
         self.build_date = "03/05/2021"
+        self.news = ""
+        self.CONFIG = {}
+
+    def initial(self):
+        import helptools
+
+        self.CONFIG = helptools.loadConfig()
+        
+        status, news = helptools.git_pull_change(self.CONFIG['GIT_REPO_PATH'])
+
+        if status:
+            self.loadBanner(__version__, news)
+        else:
+            self.loadBanner(__version__, news)
+        self.hostInfos()
 
     def separatorLine(self):
-        print(f"####################################################################")
-              
-    def loadBanner(self):
+        print(f"##############################################################################")
+
+    def loadBanner(self, version, news):
         self.separatorLine()
         print(f"""#           _         _             _                             
 #   ___ ___| |  ___  | |_  ___  ___| |_  ___  _ _      _ __  _  _ 
 #  (_-<(_-<| | |___| |  _|/ -_)(_-<|  _|/ -_)| '_|  _ | '_ \| || |
 #  /__//__/|_|        \__|\___|/__/ \__|\___||_|   (_)| .__/ \_, |
 #                                                     |_|    |__/ 
-#              """)
+#   v{version} {news}
+# """)
         self.separatorLine()
         print(f"""#  
 #              Inspired by https://testssl.sh/
 #              """)
         self.separatorLine()
+
     def hostInfos(self):
         import socket
         import requests
         import json
         import urllib
-        
+
         url = 'http://checkip4.spdyn.de/json'
         req = urllib.request.Request(url)
         response = urllib.request.urlopen(req)
         data = response.read()
-        values = json.loads(data) 
+        ipv4 = json.loads(data)
         
-        path, version, info = self.check_openssl_version()
-        if len(info) == 0:
+        url = 'http://checkip6.spdyn.de/json'
+        req = urllib.request.Request(url)
+        response = urllib.request.urlopen(req)
+        data = response.read()
+        ipv6 = json.loads(data)
+
+        path, self.version, self.info = self.check_openssl_version()
+        if len(self.info) == 0:
             print(f"""#
-#  IPv4: {values['ipinfo'][1]['ip']} \t IPv6: {values['ipinfo'][0]['ip']} 
+#  IPv4: {ipv4['ipinfo'][1]['ip']} \t IPv6: {ipv6['ipinfo'][1]['ip']} 
 #  hostname:  {socket.gethostname()}             
 #  
 #  OpenSSL 
-#  path: {path} \tversion: {version} 
+#  path: {path} \tversion: {self.version} 
 #  """)
             self.separatorLine()
         else:
@@ -56,33 +88,35 @@ class sslTester():
 #  hostname:  {socket.gethostname()}             
 #  
 #  OpenSSL 
-#  path: {path} \tversion: {version} 
+#  path: {path} \tversion: {self.version} 
 #
-#  {info}
+#  {self.info}
 #  """)
             self.separatorLine()
-    
+
     def check_openssl_version(self):
         from subprocess import check_output
         from packaging.version import Version, LegacyVersion
         import re
-        
-        path = str(check_output(["which", "openssl"]).decode("utf-8")).replace("\n","")
-        
-        version = str(check_output([path, "version"]).decode("utf-8")).replace("\n","")
-        
+
+        path = str(check_output(["which", "openssl"]).decode(
+            "utf-8")).replace("\n", "")
+
+        version = str(check_output([path, "version"]).decode(
+            "utf-8")).replace("\n", "")
+
         vers1 = re.sub("[^0-9.]+", "", version.split(" ")[1])
         vers2 = re.sub("[^0-9.]+", "", self.openssl_local_version)
-        
+
         if Version(vers1) < Version(vers2):
             info = "Bitte Version aus lib Verzeichnis nutzen"
         else:
             info = ""
-            
+
         return path, version, info
-        
+
     def loadConfig(self):
-        var =""
-    
+        var = ""
+
     def loadColor(self):
-        var =""
+        var = ""
