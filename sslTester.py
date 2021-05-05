@@ -22,6 +22,8 @@ class sslTester():
         self.build_date = "03/05/2021"
         self.news = ""
         self.CONFIG = {}
+        self.begin_test = ""
+        self.end_test = ""
 
     def initial(self):
         import helptools
@@ -36,11 +38,11 @@ class sslTester():
             self.loadBanner(__version__, news)
         self.hostInfos()
 
-    def separatorLine(self):
+    def __separatorLine(self):
         print(f"##############################################################################")
 
     def loadBanner(self, version, news):
-        self.separatorLine()
+        self.__separatorLine()
         print(f"""#           _         _             _                             
 #   ___ ___| |  ___  | |_  ___  ___| |_  ___  _ _      _ __  _  _ 
 #  (_-<(_-<| | |___| |  _|/ -_)(_-<|  _|/ -_)| '_|  _ | '_ \| || |
@@ -48,11 +50,11 @@ class sslTester():
 #                                                     |_|    |__/ 
 #   v{version} {news}
 # """)
-        self.separatorLine()
+        self.__separatorLine()
         print(f"""#  
 #              Inspired by https://testssl.sh/
 #              """)
-        self.separatorLine()
+        self.__separatorLine()
 
     def hostInfos(self):
         import socket
@@ -81,10 +83,10 @@ class sslTester():
 #  OpenSSL 
 #  path: {path} \tversion: {self.version} 
 #  """)
-            self.separatorLine()
+            self.__separatorLine()
         else:
             print(f"""#
-#  IPv4: {values['ipinfo'][1]['ip']} \t IPv6: {values['ipinfo'][0]['ip']} 
+#  IPv4: {ipv4['ipinfo'][1]['ip']} \t IPv6: {ipv6['ipinfo'][0]['ip']} 
 #  hostname:  {socket.gethostname()}             
 #  
 #  OpenSSL 
@@ -92,7 +94,7 @@ class sslTester():
 #
 #  {self.info}
 #  """)
-            self.separatorLine()
+            self.__separatorLine()
 
     def check_openssl_version(self):
         from subprocess import check_output
@@ -120,3 +122,50 @@ class sslTester():
 
     def loadColor(self):
         var = ""
+        
+    def start_check(self):
+        from datetime import datetime
+        self.begin_test = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        # Testing now (2021-05-04 16:37) ---> 82.165.229.87:443 (gmx.net) <---
+        print(f"Begin test {self.begin_test}")
+
+    def host_lookup(self, domain, mx=False):
+        import dns.resolver
+        
+        prio_filter = True
+        
+        print(f"""
+              domain: {domain}
+              MX Abfrage: {mx}""")
+        
+        if not mx:
+            records = dns.resolver.resolve(domain,"A")
+            for rec in records:
+                
+                return rec.address
+        else:
+            temp = []
+            for rec in dns.resolver.resolve(domain,"MX"):
+                temp.append(rec.to_text())
+            
+            address = []
+            if prio_filter:
+                prio = 1000
+                for item in temp:
+                    addr = item.split(" ")
+                    if prio > int(addr[0]):
+                        prio = int(addr[0])
+                        
+                for item in temp:
+                    addr = item.split(" ")
+                    if prio == int(addr[0]):
+                        address.append(addr)
+                    
+                return address
+            else:
+                for item in temp:
+                    addr = item.split(" ")
+                    address.append(addr)
+
+                    
+        
