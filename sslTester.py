@@ -121,14 +121,17 @@ class sslTester():
     def loadColor(self):
         var = ""
 
-    def start_check(self, record):
+    def start_check(self, record, port):
         from datetime import datetime
         import helptools
 
         self.begin_test = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         # Testing now (2021-05-04 16:37) ---> 82.165.229.87:443 (gmx.net) <---
         print(f"""#
-#   Begin test {self.begin_test} ------------------> {record}""")
+#   Begin test {self.begin_test} ------------------> {record}:{port}""")
+
+        self.run_prototest_openssl(record, port)
+
         helptools.separatorLine()
 
     def host_lookup(self, domain, mx=False):
@@ -142,14 +145,21 @@ class sslTester():
 #               MX Abfrage: {mx}
 #""")
         if not mx:
-            records = dns.resolver.resolve(domain, "A")
-            for rec in records:
-                print(f"#               IPv4: {rec.address}")
-                address.append(rec.address)
-            records = dns.resolver.resolve(domain, "AAAA")
-            for rec in records:
-                print(f"#               IPv6: {rec.address}")
-                address.append(rec.address)
+            try:
+                records = dns.resolver.resolve(domain, "A")
+                for rec in records:
+                    print(f"#               IPv4: {rec.address}")
+                    address.append(rec.address)
+            except:
+                pass
+
+            try:
+                records = dns.resolver.resolve(domain, "AAAA")
+                for rec in records:
+                    print(f"#               IPv6: {rec.address}")
+                    address.append(rec.address)
+            except:
+                pass
         else:
             temp = []
             for rec in dns.resolver.resolve(domain, "MX"):
@@ -184,10 +194,74 @@ class sslTester():
         import dns.resolver
 
         records = []
-        records4 = dns.resolver.resolve(domain, "A")
-        records6 = dns.resolver.resolve(domain, "AAAA")
+        try:
+            records4 = dns.resolver.resolve(domain, "A")
+            records.append(records4[0].address)
+        except:
+            pass
 
-        records.append(records4[0].address)
-        records.append(records6[0].address)
+        try:
+            records6 = dns.resolver.resolve(domain, "AAAA")
+            records.append(records6[0].address)
+        except:
+            pass
 
         return records
+
+    def run_prototest_openssl(self, ips, port):
+        import subprocess
+        import shlex
+        import os
+        from ipaddress import ip_address, IPv4Address
+
+        protocol = ["ssl2", "ssl3", "tls1", "tls1_1", "tls1_2", "tls1_3"]
+        if len(ips) == 2:
+            protocols = {"IPv4": {}, "IPv6": {}}
+        else:
+            protocols = {"IPv4": {}}
+
+        script_dir = os.path.dirname(__file__)
+        for ip in ips:
+            try:
+                ip_typ = "IPv4" if type(ip_address(
+                    ip)) is IPv4Address else "IPv6"
+            except ValueError:
+                print("Invalid")
+
+            liste = {}
+            if ip_typ == "IPv4":
+                for proto in protocol:
+                    if proto == "tls1_3":
+                        cmd = f"openssl s_client -state -connect {ip}:{port} -{proto}"
+                    else:
+                        cmd = f"{script_dir}/lib/openssl s_client -state -connect {ip}:{port} -{proto}"
+                    args = shlex.split(cmd)
+                    f = open(f"temp-{ip}.txt", "w")
+                    p = subprocess.Popen(args,
+                                         stdin=subprocess.PIPE,
+                                         stdout=f,
+                                         stderr=subprocess.PIPE)
+                    result = p.communicate()
+                    liste[proto] = p.returncode
+                protocols[ip_typ] = liste
+
+        if len(ips) == 2:
+            print(f"""#
+#               Protocol        |       IPv4        |       IPv6              
+#       ------------------------+-------------------+--------------------------------------------
+#               SSL2            |       {protocols["IPv4"]["ssl2"]}             |       protocols["IPv6"]["ssl2"]
+#               SSL3            |       {protocols["IPv4"]["ssl3"]}             |       protocols["IPv6"]["ssl3"]
+#               TLS1            |       {protocols["IPv4"]["tls1"]}             |       protocols["IPv6"]["tls1"]
+#               TLS1.1          |       {protocols["IPv4"]["tls1_1"]}           |       protocols["IPv6"]["tls1_1"]
+#               TLS1.2          |       {protocols["IPv4"]["tls1_2"]}           |       protocols["IPv6"]["tls1_2"]
+#               TLS1.3          |       {protocols["IPv4"]["tls1_3"]}           |       protocols["IPv6"]["tls1_3"]""")
+        else:
+            print(f"""
+#               Protocol        |       IPv4                     
+#       ------------------------+-------------------
+#               SSL2            |       {protocols["IPv4"]["ssl2"]}
+#               SSL3            |       {protocols["IPv4"]["ssl3"]}
+#               TLS1            |       {protocols["IPv4"]["tls1"]}
+#               TLS1.1          |       {protocols["IPv4"]["tls1_1"]}
+#               TLS1.2          |       {protocols["IPv4"]["tls1_2"]}
+#               TLS1.3          |       {protocols["IPv4"]["tls1_3"]}""")
