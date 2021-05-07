@@ -34,13 +34,16 @@ def main():
         mx = True
 
     ssl = sslTester.sslTester()
-    
+
     ssl.initial()
 
     records = ssl.host_lookup(args.domain, mx)
-    
-    for rec in records:
-        ssl.start_check(rec)
+
+    if mx:
+        for rec in records:
+            ssl.start_check(rec)
+    else:
+        ssl.start_check(records)
 
 
 if __name__ == '__main__':
