@@ -1,11 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 __author__ = "Marcel Eggert"
 __copyright__ = "Copyright 2021"
 __version__ = "0.0.1"
 
-"""ssl-test.py: Description of what foobar does."""
+"""ssl-test.py: """
 
 import sslTester
 
@@ -34,13 +34,13 @@ def main():
         mx = True
 
     ssl = sslTester.sslTester()
-
+    
     ssl.initial()
 
-    ssl.start_check()
-
-    rec = ssl.host_lookup(args.domain, mx)
-    print(rec)
+    records = ssl.host_lookup(args.domain, mx)
+    
+    for rec in records:
+        ssl.start_check(rec)
 
 
 if __name__ == '__main__':

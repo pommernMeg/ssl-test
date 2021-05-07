@@ -123,25 +123,29 @@ class sslTester():
     def loadColor(self):
         var = ""
         
-    def start_check(self):
+    def start_check(self, record):
         from datetime import datetime
         self.begin_test = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         # Testing now (2021-05-04 16:37) ---> 82.165.229.87:443 (gmx.net) <---
-        print(f"Begin test {self.begin_test}")
+        print(f"""#
+#   Begin test {self.begin_test} ------------------> {record[1][:-1]}""")
+        self.__separatorLine()
+        
 
     def host_lookup(self, domain, mx=False):
         import dns.resolver
         
         prio_filter = True
         
-        print(f"""
-              domain: {domain}
-              MX Abfrage: {mx}""")
+        print(f"""#
+#              domain: {domain}
+#              MX Abfrage: {mx}\n#""")
         
         if not mx:
             records = dns.resolver.resolve(domain,"A")
             for rec in records:
                 
+                self.__separatorLine()
                 return rec.address
         else:
             temp = []
@@ -160,12 +164,13 @@ class sslTester():
                     addr = item.split(" ")
                     if prio == int(addr[0]):
                         address.append(addr)
-                    
+                
+                self.__separatorLine()    
                 return address
             else:
                 for item in temp:
                     addr = item.split(" ")
                     address.append(addr)
-
-                    
-        
+                self.__separatorLine()
+                return address
+                
