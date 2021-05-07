@@ -22,14 +22,19 @@ def git_pull_change(path):
     else:
         news = "Repo changed!"
         return True, news
-    
+
+
 def loadConfig():
     import os
     import yaml
-    
+
     script_dir = os.path.dirname(__file__)
-    path = os.path.join(script_dir, ".config.yaml" )
+    path = os.path.join(script_dir, ".config.yaml")
     with open(path, 'r') as f:
         cfg = yaml.safe_load(f.read())
-        
+
     return cfg
+
+
+def separatorLine():
+    print(f"##########################################################################################################")

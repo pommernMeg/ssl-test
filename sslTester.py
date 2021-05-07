@@ -7,6 +7,7 @@ __author__ = "Marcel Eggert"
 __copyright__ = "Copyright 2021"
 __version__ = "0.0.1"
 
+
 class sslTester():
     """
     Create ssl Tester module for testing ssl connections.
@@ -29,7 +30,7 @@ class sslTester():
         import helptools
 
         self.CONFIG = helptools.loadConfig()
-        
+
         status, news = helptools.git_pull_change(self.CONFIG['GIT_REPO_PATH'])
 
         if status:
@@ -38,11 +39,10 @@ class sslTester():
             self.loadBanner(__version__, news)
         self.hostInfos()
 
-    def __separatorLine(self):
-        print(f"##############################################################################")
-
     def loadBanner(self, version, news):
-        self.__separatorLine()
+        import helptools
+
+        helptools.separatorLine()
         print(f"""#           _         _             _                             
 #   ___ ___| |  ___  | |_  ___  ___| |_  ___  _ _      _ __  _  _ 
 #  (_-<(_-<| | |___| |  _|/ -_)(_-<|  _|/ -_)| '_|  _ | '_ \| || |
@@ -50,24 +50,25 @@ class sslTester():
 #                                                     |_|    |__/ 
 #   v{version} {news}
 # """)
-        self.__separatorLine()
+        helptools.separatorLine()
         print(f"""#  
 #              Inspired by https://testssl.sh/
 #              """)
-        self.__separatorLine()
+        helptools.separatorLine()
 
     def hostInfos(self):
         import socket
         import requests
         import json
         import urllib
+        import helptools
 
         url = 'http://checkip4.spdyn.de/json'
         req = urllib.request.Request(url)
         response = urllib.request.urlopen(req)
         data = response.read()
         ipv4 = json.loads(data)
-        
+
         url = 'http://checkip6.spdyn.de/json'
         req = urllib.request.Request(url)
         response = urllib.request.urlopen(req)
@@ -83,7 +84,7 @@ class sslTester():
 #  OpenSSL 
 #  path: {path} \tversion: {self.version} 
 #  """)
-            self.__separatorLine()
+            helptools.separatorLine()
         else:
             print(f"""#
 #  IPv4: {ipv4['ipinfo'][1]['ip']} \t IPv6: {ipv6['ipinfo'][0]['ip']} 
@@ -94,7 +95,7 @@ class sslTester():
 #
 #  {self.info}
 #  """)
-            self.__separatorLine()
+            helptools.separatorLine()
 
     def check_openssl_version(self):
         from subprocess import check_output
@@ -117,60 +118,76 @@ class sslTester():
 
         return path, version, info
 
-    def loadConfig(self):
-        var = ""
-
     def loadColor(self):
         var = ""
-        
+
     def start_check(self, record):
         from datetime import datetime
+        import helptools
+
         self.begin_test = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         # Testing now (2021-05-04 16:37) ---> 82.165.229.87:443 (gmx.net) <---
         print(f"""#
-#   Begin test {self.begin_test} ------------------> {record[1][:-1]}""")
-        self.__separatorLine()
-        
+#   Begin test {self.begin_test} ------------------> {record}""")
+        helptools.separatorLine()
 
     def host_lookup(self, domain, mx=False):
         import dns.resolver
-        
+        import helptools
+
         prio_filter = True
-        
+        address = []
         print(f"""#
-#              domain: {domain}
-#              MX Abfrage: {mx}\n#""")
-        
+#               domain: {domain}
+#               MX Abfrage: {mx}
+#""")
         if not mx:
-            records = dns.resolver.resolve(domain,"A")
+            records = dns.resolver.resolve(domain, "A")
             for rec in records:
-                
-                self.__separatorLine()
-                return rec.address
+                print(f"#               IPv4: {rec.address}")
+                address.append(rec.address)
+            records = dns.resolver.resolve(domain, "AAAA")
+            for rec in records:
+                print(f"#               IPv6: {rec.address}")
+                address.append(rec.address)
         else:
             temp = []
-            for rec in dns.resolver.resolve(domain,"MX"):
+            for rec in dns.resolver.resolve(domain, "MX"):
                 temp.append(rec.to_text())
-            
-            address = []
+
             if prio_filter:
                 prio = 1000
                 for item in temp:
                     addr = item.split(" ")
                     if prio > int(addr[0]):
                         prio = int(addr[0])
-                        
+
+                print(f"""#                     Records
+#               Priority\t|\tIP
+#               ----------------+----------------------------""")
                 for item in temp:
                     addr = item.split(" ")
                     if prio == int(addr[0]):
-                        address.append(addr)
-                
-                self.__separatorLine()    
-                return address
+                        print(f"""#               \t{addr[0]}\t|\t{addr[1]}""")
+                        address.append(self.get_host_ip(addr[1]))
             else:
                 for item in temp:
                     addr = item.split(" ")
-                    address.append(addr)
-                self.__separatorLine()
-                return address
-                
+                    address.append(self.get_host_ip(addr[1]))
+
+        print(f"""#""")
+        helptools.separatorLine()
+
+        return address
+
+    def get_host_ip(self, domain):
+        import dns.resolver
+
+        records = []
+        records4 = dns.resolver.resolve(domain, "A")
+        records6 = dns.resolver.resolve(domain, "AAAA")
+
+        records.append(records4[0].address)
+        records.append(records6[0].address)
+
+        return records
