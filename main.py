@@ -20,13 +20,22 @@ def main():
 
     parser.add_argument('--domain',
                         dest='domain',
-                        help='Domain welche abgefragt werden soll')
+                        help='Domain welche abgefragt werden soll',
+                        required=True)
 
+    parser.add_argument('--port',
+                        dest='port',
+                        type=int,
+                        help='Port für die Connection',
+                        required=True)
+    
     parser.add_argument('--mx',
                         dest='mx',
                         action='store_true',
                         default=False,
                         help='get mx records and start the ssl tests for it')
+    
+    
 
     args = parser.parse_args()
 
@@ -41,9 +50,9 @@ def main():
 
     if mx:
         for rec in records:
-            ssl.start_check(rec)
+            ssl.start_check(rec, args.port)
     else:
-        ssl.start_check(records)
+        ssl.start_check(records, args.port)
 
 
 if __name__ == '__main__':
